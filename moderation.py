@@ -1,8 +1,9 @@
 import praw
 import configparser
+from discord_notifications import invia_notifica_discord
 
 # Lettura del file di configurazione
-config = configparser.ConfigParser()
+config = configparser.ConfigParser(interpolation=None)
 config.read('config.ini')
 
 def connetti_reddit():
@@ -20,6 +21,8 @@ def rimuovi_contenuto(contenuto):
     try:
         if isinstance(contenuto, praw.models.Submission) or isinstance(contenuto, praw.models.Comment):
             contenuto.mod.remove()
+            messaggio = f"🚨 **Contenuto rimosso**: {contenuto.id}\n🔗 [Link](https://reddit.com{contenuto.permalink})"
+            invia_notifica_discord(messaggio)
             print(f"✅ Contenuto {contenuto.id} rimosso.")
     except Exception as e:
         print(f"❌ Errore nella rimozione del contenuto {contenuto.id}: {e}")
@@ -33,10 +36,12 @@ def banna_utente(reddit, autore):
             duration=int(config["moderation"]["ban_duration"]),
             note=config["moderation"]["ban_reason"]
         )
+        messaggio = f"🚫 **Utente Bannato**: {autore}\n⏳ Durata: {config['moderation']['ban_duration']} giorni\n📌 Motivo: {config['moderation']['ban_reason']}"
+        invia_notifica_discord(messaggio)
         print(f"✅ Utente {autore} bannato per {config['moderation']['ban_duration']} giorni.")
     except Exception as e:
         print(f"❌ Errore nel bannare {autore}: {e}")
-
+        
 def invia_messaggio(reddit, autore):
     """ Invia un messaggio di avviso all'utente. """
     try:

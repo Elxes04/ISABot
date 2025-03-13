@@ -12,25 +12,29 @@ from text_processing import contiene_numero_telefono
 logging.basicConfig(level=logging.INFO)
 
 # Legge il file di configurazione
-config = configparser.ConfigParser()
+config = configparser.ConfigParser(interpolation=None)
 config.read('config.ini')
 
 def controlla_post(post, reddit):
     """ Analizza un post e applica la moderazione se necessario. """
     try:
         if contiene_numero_telefono(post.title) or contiene_numero_telefono(post.selftext):
-            logging.info(f"🔴 Numero di telefono rilevato nel post {post.id}.")
+            logging.info(f"🔴 Numero di telefono rilevato nel post {post.id}: \"{post.title}\" | \"{post.selftext}\"")
             rimuovi_contenuto(post)
             banna_utente(reddit, post.author)
             invia_messaggio(reddit, post.author)
 
-        if post.url.endswith(("jpg", "jpeg", "png")) and analizza_immagine(post.url):
-            logging.info(f"🔴 Numero di telefono rilevato nell'immagine del post {post.id}.")
-            rimuovi_contenuto(post)
-            banna_utente(reddit, post.author)
-            invia_messaggio(reddit, post.author)
+        if post.url.endswith(("jpg", "jpeg", "png")):
+            logging.info(f"📷 Analizzando immagine del post {post.id}...")
+            if analizza_immagine(post.url):
+                logging.info(f"🔴 Numero di telefono rilevato nell'immagine del post {post.id}.")
+                rimuovi_contenuto(post)
+                banna_utente(reddit, post.author)
+                invia_messaggio(reddit, post.author)
+            else:
+                logging.info(f"✅ Nessun numero rilevato nell'immagine del post {post.id}.")
     except Exception as e:
-        logging.error(f"Errore nel controllo del post {post.id}: {e}")
+        logging.error(f"❌ Errore nel controllo del post {post.id}: {e}")
 
 def controlla_commento(commento, reddit):
     """ Analizza un commento e applica la moderazione se necessario. """
