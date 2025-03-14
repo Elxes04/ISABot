@@ -7,6 +7,7 @@ import prawcore
 from moderation import connetti_reddit, rimuovi_contenuto, banna_utente, invia_messaggio
 from image_processing import analizza_immagine
 from text_processing import contiene_numero_telefono
+from discord_notifications import invia_notifica_discord
 
 # Configura il logging
 logging.basicConfig(level=logging.INFO)
@@ -21,7 +22,10 @@ def controlla_post(post, reddit):
         if contiene_numero_telefono(post.title) or contiene_numero_telefono(post.selftext):
             logging.info(f"🔴 Numero di telefono rilevato nel post {post.id}: \"{post.title}\" | \"{post.selftext}\"")
             rimuovi_contenuto(post)
-            banna_utente(reddit, post.author)
+            if config["moderation"].getboolean("ban_user"):
+                banna_utente(reddit, post.author)
+            else:
+                invia_notifica_discord(f"🚨 **Numero di telefono rilevato nel post {post.id}**\n🔗 [Link](https://reddit.com{post.permalink})\n👤 **Autore:** {post.author}")
             invia_messaggio(reddit, post.author)
 
         if post.url.endswith(("jpg", "jpeg", "png")):
@@ -29,7 +33,10 @@ def controlla_post(post, reddit):
             if analizza_immagine(post.url):
                 logging.info(f"🔴 Numero di telefono rilevato nell'immagine del post {post.id}.")
                 rimuovi_contenuto(post)
-                banna_utente(reddit, post.author)
+                if config["moderation"].getboolean("ban_user"):
+                    banna_utente(reddit, post.author)
+                else:
+                    invia_notifica_discord(f"🚨 **Numero di telefono rilevato nell'immagine del post {post.id}**\n🔗 [Link](https://reddit.com{post.permalink})\n👤 **Autore:** {post.author}")
                 invia_messaggio(reddit, post.author)
             else:
                 logging.info(f"✅ Nessun numero rilevato nell'immagine del post {post.id}.")
@@ -42,7 +49,10 @@ def controlla_commento(commento, reddit):
         if contiene_numero_telefono(commento.body):
             logging.info(f"🔴 Numero di telefono rilevato nel commento {commento.id}.")
             rimuovi_contenuto(commento)
-            banna_utente(reddit, commento.author)
+            if config["moderation"].getboolean("ban_user"):
+                banna_utente(reddit, commento.author)
+            else:
+                invia_notifica_discord(f"🚨 **Numero di telefono rilevato nel commento {commento.id}**\n🔗 [Link](https://reddit.com{commento.permalink})\n👤 **Autore:** {commento.author}")
             invia_messaggio(reddit, commento.author)
     except Exception as e:
         logging.error(f"Errore nel controllo del commento {commento.id}: {e}")
