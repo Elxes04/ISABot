@@ -67,6 +67,11 @@ def analizza_immagine(url):
         logging.info(f"🟡 Numero in whitelist rilevato: {testo}, nessuna azione.")
         return False
     
+    # Aggiungi un controllo per evitare falsi positivi
+    if len(testo) < 10:
+        logging.info("🟡 Testo estratto troppo breve per contenere un numero di telefono valido.")
+        return False
+    
     if contiene_numero_telefono(testo):
         logging.info("🔴 Numero di telefono rilevato, rimozione in corso.")
         invia_notifica_discord(f"🚨 **Numero di telefono rilevato in un'immagine!**\n🔗 {url}")
